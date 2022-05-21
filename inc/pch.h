@@ -4,5 +4,11 @@
 #define UNICODE
 // Windows Header Files
 #include <windows.h>
+#include <filesystem>
 
 #include "ColumnModePluginAPI.h"
+
+#include "PreviewWindow.h"
+#include "Plugin.h"
+
+constexpr LPCWSTR PLUGIN_NAME = L"CMPlantuml";
