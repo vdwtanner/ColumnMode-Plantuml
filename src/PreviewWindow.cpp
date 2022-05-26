@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <shellapi.h>
 
 using namespace CMPlantuml;
 
@@ -20,6 +21,11 @@ PreviewWindow::PreviewWindow(Plugin* plugin) : m_plugin(plugin)
     m_path.clear();
 }
 
+PreviewWindow::~PreviewWindow()
+{
+    DeleteFile(m_tempPath.c_str());
+}
+
 HRESULT PreviewWindow::Init()
 {
     WNDCLASS windowClass{};
@@ -37,7 +43,11 @@ HRESULT PreviewWindow::Init()
 void PreviewWindow::SetPlantumlSourcePath(std::filesystem::path path)
 {
     m_path.assign(path);
-
+    std::wstring tempBuff;
+    tempBuff.resize(128);
+    DWORD size = GetTempPath2(128, tempBuff.data());
+    m_tempPath.assign(tempBuff.substr(0, size));
+    m_tempPath.append(L"CMPlantumlTemp.svg");
     //SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)&sampleWindow);
 }
 
@@ -67,6 +77,37 @@ void PreviewWindow::EnsureWindowCreated()
             SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
         }
     }
+}
+
+bool PreviewWindow::GeneratePreview()
+{
+    std::wstring params = L"-NoProfile -NonInteractive -command Get-Content ";
+    params.append(L"'")
+        .append(m_path.c_str())
+        .append(L"' | java.exe -jar 'C:\\ProgramData\\chocolatey\\lib\\plantuml\\tools\\plantuml.jar' -tsvg -pipe > '")
+        .append(m_tempPath.c_str())
+        .append(L"'");
+
+    SHELLEXECUTEINFO ShExecInfo = { 0 };
+    ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+    ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+    ShExecInfo.hwnd = NULL;
+    ShExecInfo.lpVerb = NULL;
+    ShExecInfo.lpFile = L"pwsh.exe";
+    ShExecInfo.lpParameters = params.c_str();
+    ShExecInfo.lpDirectory = NULL;
+    ShExecInfo.nShow = SW_HIDE;
+    ShExecInfo.hInstApp = NULL;
+    if (!ShellExecuteEx(&ShExecInfo))
+    {
+        DebugBreak();
+        return false;
+    }
+    WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+    CloseHandle(ShExecInfo.hProcess);
+
+    ShellExecute(NULL, L"open", m_tempPath.c_str(), NULL, NULL, 1);
+    return true;
 }
 
 void PreviewWindow::UpdateWindowTitle()

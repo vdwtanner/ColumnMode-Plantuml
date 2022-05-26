@@ -52,6 +52,7 @@ void Plugin::HandleFileChange(LPCWSTR filepath)
 	{
 		m_pPreviewWindow->SetPlantumlSourcePath(path);
 		m_pPreviewWindow->ShowPreviewWindow();
+		m_pPreviewWindow->GeneratePreview();
 	}
 }
 
@@ -68,6 +69,7 @@ HRESULT APIENTRY Plugin::OnOpen(HANDLE handle, LPCWSTR filepath)
 HRESULT APIENTRY Plugin::OnSave(HANDLE handle, LPCWSTR)
 {
 	Plugin* pThis = reinterpret_cast<Plugin*>(handle);
+	pThis->m_pPreviewWindow->GeneratePreview();
 	return S_OK;
 }
 
