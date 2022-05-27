@@ -19,6 +19,7 @@ namespace CMPlantuml
 	protected:
 		void EnsureWindowCreated();
 		void UpdateWindowTitle();
+		void ImageGeneratedCB();
 
 	private:
 		Plugin* m_plugin;

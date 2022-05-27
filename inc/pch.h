@@ -5,10 +5,16 @@
 // Windows Header Files
 #include <windows.h>
 #include <filesystem>
+#include <functional>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 #include "ColumnModePluginAPI.h"
 
 #include "PreviewWindow.h"
+#include "WorkerThread.h"
 #include "Plugin.h"
 
 constexpr LPCWSTR PLUGIN_NAME = L"CMPlantuml";

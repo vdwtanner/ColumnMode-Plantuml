@@ -20,6 +20,7 @@ namespace CMPlantuml
 
 	public:
 		ColumnMode::ColumnModeCallbacks m_callbacks;
+		WorkerThread m_workerThread;
 
 	private:
 		PreviewWindow* m_pPreviewWindow;

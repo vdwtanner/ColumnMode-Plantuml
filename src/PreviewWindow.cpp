@@ -88,25 +88,29 @@ bool PreviewWindow::GeneratePreview()
         .append(m_tempPath.c_str())
         .append(L"'");
 
-    SHELLEXECUTEINFO ShExecInfo = { 0 };
-    ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-    ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-    ShExecInfo.hwnd = NULL;
-    ShExecInfo.lpVerb = NULL;
-    ShExecInfo.lpFile = L"pwsh.exe";
-    ShExecInfo.lpParameters = params.c_str();
-    ShExecInfo.lpDirectory = NULL;
-    ShExecInfo.nShow = SW_HIDE;
-    ShExecInfo.hInstApp = NULL;
-    if (!ShellExecuteEx(&ShExecInfo))
-    {
-        DebugBreak();
-        return false;
-    }
-    WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
-    CloseHandle(ShExecInfo.hProcess);
+    auto GenerateImage = [=]() {
+        SHELLEXECUTEINFO ShExecInfo = { 0 };
+        ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+        ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+        ShExecInfo.hwnd = NULL;
+        ShExecInfo.lpVerb = NULL;
+        ShExecInfo.lpFile = L"pwsh.exe";
+        ShExecInfo.lpParameters = params.c_str();
+        ShExecInfo.lpDirectory = NULL;
+        ShExecInfo.nShow = SW_HIDE;
+        ShExecInfo.hInstApp = NULL;
+        if (!ShellExecuteEx(&ShExecInfo))
+        {
+            MessageBox(NULL, L"Error Generating preview image!", PLUGIN_NAME, MB_OK | MB_ICONERROR);
+            return;
+        }
+        WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+        CloseHandle(ShExecInfo.hProcess);
+        ImageGeneratedCB();
+    };
+    
+    m_plugin->m_workerThread.EnqueueWork(GenerateImage);
 
-    ShellExecute(NULL, L"open", m_tempPath.c_str(), NULL, NULL, 1);
     return true;
 }
 
@@ -119,6 +123,11 @@ void PreviewWindow::UpdateWindowTitle()
             .append(m_path.filename());
         SetWindowText(m_hwnd.value(), windowTitle.c_str());
     }
+}
+
+void PreviewWindow::ImageGeneratedCB()
+{
+    ShellExecute(NULL, L"open", m_tempPath.c_str(), NULL, NULL, 1);
 }
 
 LRESULT CALLBACK PreviewWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
