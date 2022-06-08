@@ -18,3 +18,20 @@
 #include "Plugin.h"
 
 constexpr LPCWSTR PLUGIN_NAME = L"CMPlantuml";
+
+inline void VerifyHR(HRESULT hr)
+{
+	if (FAILED(hr))
+		__debugbreak();
+}
+
+inline void VerifyBool(bool b)
+{
+	if (!b)
+		__debugbreak();
+}
+
+inline D2D1_VECTOR_2F Add(D2D1_VECTOR_2F a, D2D1_VECTOR_2F b)
+{
+	return { a.x + b.x, a.y + b.y };
+}
