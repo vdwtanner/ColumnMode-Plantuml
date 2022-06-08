@@ -24,8 +24,12 @@ namespace CMPlantuml
 	private:
 		Plugin* m_plugin;
 		ATOM m_windowClassAtom;
+		DragHelper m_dragHelper;
 		std::filesystem::path m_path;
 		std::filesystem::path m_tempPath;
 		std::optional<HWND> m_hwnd;
+		D2DPreviewRenderer m_previewRenderer;
+
+		bool isNewFile = false;
 	};
 }

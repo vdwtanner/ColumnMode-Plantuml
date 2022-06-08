@@ -48,6 +48,7 @@ void PreviewWindow::SetPlantumlSourcePath(std::filesystem::path path)
     DWORD size = GetTempPath2(128, tempBuff.data());
     m_tempPath.assign(tempBuff.substr(0, size));
     m_tempPath.append(L"CMPlantumlTemp.png");
+    isNewFile = true;
     //SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)&sampleWindow);
 }
 
@@ -55,7 +56,10 @@ bool PreviewWindow::ShowPreviewWindow()
 {
     EnsureWindowCreated();
     UpdateWindowTitle();
-    ShowWindowAsync(m_hwnd.value(), 1);
+    if (!IsWindowVisible(m_hwnd.value()))
+    {
+        ShowWindowAsync(m_hwnd.value(), 1);
+    }
     return true;
 }
 
@@ -70,10 +74,11 @@ void PreviewWindow::EnsureWindowCreated()
         args.height = 500;
         args.width = 500;
 
-        HWND hwnd;
+        HWND hwnd=0;
         if (SUCCEEDED((*m_plugin->m_callbacks.pfnOpenWindow)(args, &hwnd)))
         {
             m_hwnd.emplace(std::move(hwnd));
+            m_previewRenderer.Init(hwnd);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
         }
     }
@@ -130,17 +135,68 @@ void PreviewWindow::UpdateWindowTitle()
 
 void PreviewWindow::ImageGeneratedCB()
 {
-    ShellExecute(NULL, L"open", m_tempPath.c_str(), NULL, NULL, 1);
+    m_previewRenderer.LoadPreviewImage(m_tempPath.c_str(), isNewFile);
+    m_previewRenderer.Draw();
+    isNewFile = false;
 }
 
 LRESULT CALLBACK PreviewWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (!m_hwnd.has_value())
+    {
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+
     switch (message)
     {
     case WM_DESTROY:
         m_hwnd.reset();
         break;
-    case WM_LBUTTONUP: MessageBox(NULL, L"Clicked in CMPlantuml's Window!", L"CMPlantuml", MB_OK); break;
+    case WM_LBUTTONDOWN: {
+        m_dragHelper.StartDragging(lParam, m_previewRenderer.GetPosition()); 
+        return 0;
     }
+    case WM_LBUTTONUP: {
+        D2D1_VECTOR_2F newPos;
+        if (m_dragHelper.StopDragging(lParam, newPos))
+        {
+            m_previewRenderer.SetPosition(newPos);
+            m_previewRenderer.Draw();
+        }
+        return 0;
+    }
+    case WM_MOUSEMOVE: {
+        D2D1_VECTOR_2F newPos;
+        if (m_dragHelper.OnMouseMove(lParam, newPos))
+        {
+            m_previewRenderer.SetPosition(newPos);
+            m_previewRenderer.Draw();
+        }
+        return 0;
+    }
+    case WM_MOUSELEAVE: {
+        D2D1_VECTOR_2F newPos;
+        if (m_dragHelper.StopDragging(lParam, newPos))
+        {
+            m_previewRenderer.SetPosition(newPos);
+            m_previewRenderer.Draw();
+        }
+        return 0;
+    } break;
+    case WM_MOUSEWHEEL: {
+        float wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam) / 120.0f;
+        m_previewRenderer.Zoom(wheelDelta * .05f);
+        m_previewRenderer.Draw();
+        return 0;
+    }
+    case WM_PAINT:
+        m_previewRenderer.Draw();
+        break;
+    case WM_SIZE:
+        m_previewRenderer.OnResize();
+        return 0;
+        break;
+    }
+    
     return DefWindowProc(hWnd, message, wParam, lParam);
 }

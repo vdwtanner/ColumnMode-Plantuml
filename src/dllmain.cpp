@@ -1,5 +1,10 @@
 #include "pch.h"
 
+//include libs
+#pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "d2d1.lib")
+#pragma comment (lib, "windowscodecs.lib")
+
 using namespace CMPlantuml;
 
 HRESULT APIENTRY OnShutdown(HANDLE handle)
