@@ -47,7 +47,7 @@ void PreviewWindow::SetPlantumlSourcePath(std::filesystem::path path)
     tempBuff.resize(128);
     DWORD size = GetTempPath2(128, tempBuff.data());
     m_tempPath.assign(tempBuff.substr(0, size));
-    m_tempPath.append(L"CMPlantumlTemp.svg");
+    m_tempPath.append(L"CMPlantumlTemp.png");
     //SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)&sampleWindow);
 }
 
@@ -81,12 +81,12 @@ void PreviewWindow::EnsureWindowCreated()
 
 bool PreviewWindow::GeneratePreview()
 {
-    std::wstring params = L"-NoProfile -NonInteractive -command Get-Content ";
-    params.append(L"'")
+    std::wstring params = L"/C type ";
+    params.append(L"\"")
         .append(m_path.c_str())
-        .append(L"' | java.exe -jar 'C:\\ProgramData\\chocolatey\\lib\\plantuml\\tools\\plantuml.jar' -tsvg -pipe > '")
+        .append(L"\" | java.exe -jar \"C:\\ProgramData\\chocolatey\\lib\\plantuml\\tools\\plantuml.jar\" -png -pipe > \"")
         .append(m_tempPath.c_str())
-        .append(L"'");
+        .append(L"\" & exit");
 
     auto GenerateImage = [=]() {
         SHELLEXECUTEINFO ShExecInfo = { 0 };
@@ -94,7 +94,7 @@ bool PreviewWindow::GeneratePreview()
         ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
         ShExecInfo.hwnd = NULL;
         ShExecInfo.lpVerb = NULL;
-        ShExecInfo.lpFile = L"pwsh.exe";
+        ShExecInfo.lpFile = L"cmd.exe";
         ShExecInfo.lpParameters = params.c_str();
         ShExecInfo.lpDirectory = NULL;
         ShExecInfo.nShow = SW_HIDE;
@@ -104,9 +104,12 @@ bool PreviewWindow::GeneratePreview()
             MessageBox(NULL, L"Error Generating preview image!", PLUGIN_NAME, MB_OK | MB_ICONERROR);
             return;
         }
-        WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
-        CloseHandle(ShExecInfo.hProcess);
-        ImageGeneratedCB();
+        else
+        {
+            WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+            CloseHandle(ShExecInfo.hProcess);
+            ImageGeneratedCB();
+        }
     };
     
     m_plugin->m_workerThread.EnqueueWork(GenerateImage);
