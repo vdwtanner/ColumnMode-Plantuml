@@ -4,6 +4,7 @@
 #define UNICODE
 // Windows Header Files
 #include <windows.h>
+#include <windowsx.h>
 #include <wrl/client.h>
 using namespace ::Microsoft::WRL;
 
@@ -25,6 +26,7 @@ using namespace ::Microsoft::WRL;
 #include "ColumnModePluginAPI.h"
 
 #include "DragHelper.h"
+#include "ContextMenu.h"
 #include "D2DPreviewRenderer.h"
 #include "PreviewWindow.h"
 #include "WorkerThread.h"

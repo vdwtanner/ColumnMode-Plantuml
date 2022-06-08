@@ -16,7 +16,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-PreviewWindow::PreviewWindow(Plugin* plugin) : m_plugin(plugin)
+PreviewWindow::PreviewWindow(Plugin* plugin) : m_plugin(plugin), m_contextMenu(plugin)
 {
     m_path.clear();
 }
@@ -37,6 +37,7 @@ HRESULT PreviewWindow::Init()
     {
         return E_FAIL;
     }
+    m_contextMenu.Init(CONTEXT_MENU_BASEID);
     return S_OK;
 }
 
@@ -122,6 +123,56 @@ bool PreviewWindow::GeneratePreview()
     return true;
 }
 
+void CMPlantuml::PreviewWindow::ExportDiagram(LPCWSTR exportPath, LPCWSTR format)
+{
+    std::wstring params = L"/C type ";
+    params.append(L"\"")
+        .append(m_path.c_str())
+        .append(L"\" | java.exe -jar \"C:\\ProgramData\\chocolatey\\lib\\plantuml\\tools\\plantuml.jar\" -")
+        .append(format)
+        .append(L" -pipe > \"")
+        .append(exportPath)
+        .append(L"\" & \"")
+        .append(exportPath)
+        .append(L"\" & exit");
+
+    auto GenerateImage = [=]() {
+        SHELLEXECUTEINFO ShExecInfo = { 0 };
+        ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+        ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+        ShExecInfo.hwnd = NULL;
+        ShExecInfo.lpVerb = NULL;
+        ShExecInfo.lpFile = L"cmd.exe";
+        ShExecInfo.lpParameters = params.c_str();
+        ShExecInfo.lpDirectory = NULL;
+        ShExecInfo.nShow = SW_HIDE;
+        ShExecInfo.hInstApp = NULL;
+        if (!ShellExecuteEx(&ShExecInfo))
+        {
+            MessageBox(NULL, L"Error Generating export image!", PLUGIN_NAME, MB_OK | MB_ICONERROR);
+            return;
+        }
+        else
+        {
+            WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+            CloseHandle(ShExecInfo.hProcess);
+        }
+    };
+
+    m_plugin->m_workerThread.EnqueueWork(GenerateImage);
+}
+
+bool CMPlantuml::PreviewWindow::TryGetHwnd(_Out_ HWND& pHwnd)
+{
+    pHwnd = NULL;
+    if (m_hwnd.has_value())
+    {
+        pHwnd = m_hwnd.value();
+        return true;
+    }
+    return false;
+}
+
 void PreviewWindow::UpdateWindowTitle()
 {
     if (m_hwnd.has_value() && !m_path.empty())
@@ -195,7 +246,16 @@ LRESULT CALLBACK PreviewWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, 
     case WM_SIZE:
         m_previewRenderer.OnResize();
         return 0;
-        break;
+    case WM_CONTEXTMENU:
+        if(m_contextMenu.OnContextMenu(hWnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)))
+        {
+            return 0;
+        }
+    case WM_COMMAND:
+        if (m_contextMenu.TryHandleWmCommand(wParam))
+        {
+            return 0;
+        }
     }
     
     return DefWindowProc(hWnd, message, wParam, lParam);

@@ -15,6 +15,9 @@ namespace CMPlantuml
 		static HRESULT APIENTRY OnSaveAs(HANDLE, LPCWSTR);
 		static HRESULT APIENTRY OnLoadCompleted(HANDLE);
 
+	public:
+		PreviewWindow* GetPreviewWindow() { return m_pPreviewWindow; }
+
 	protected:
 		void HandleFileChange(LPCWSTR);
 

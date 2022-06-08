@@ -9,7 +9,6 @@
 #include <fstream>
 #include <Shlwapi.h>
 #include <shcore.h>
-#include <windowsx.h>
 
 #include "D2DPreviewRenderer.h"
 
