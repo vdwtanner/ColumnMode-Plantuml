@@ -45,7 +45,7 @@ void Plugin::HandleFileChange(LPCWSTR filepath)
 	{
 		return;
 	}
-
+	m_callbacks.pfnRecommendEditMode(this, ColumnMode::EDIT_MODE::TextMode);
 	int response = MessageBox(NULL, L"Would you like to preview this file?", PLUGIN_NAME, MB_YESNO | MB_ICONQUESTION);
 
 	if (response == IDYES)
