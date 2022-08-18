@@ -186,6 +186,10 @@ void PreviewWindow::UpdateWindowTitle()
 
 void PreviewWindow::ImageGeneratedCB()
 {
+    while (m_dragHelper.IsDragging())
+    {
+        Sleep(10);
+    }
     m_previewRenderer.LoadPreviewImage(m_tempPath.c_str(), isNewFile);
     m_previewRenderer.Draw();
     isNewFile = false;
