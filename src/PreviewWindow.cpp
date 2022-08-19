@@ -27,6 +27,7 @@ PreviewWindow::~PreviewWindow()
     {
         CloseWindow(m_hwnd.value());
     }
+    UnregisterClass(MAKEINTATOM(m_windowClassAtom), NULL);
     DeleteFile(m_tempPath.c_str());
 }
 
