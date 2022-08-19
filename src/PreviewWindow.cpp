@@ -23,6 +23,10 @@ PreviewWindow::PreviewWindow(Plugin* plugin) : m_plugin(plugin), m_contextMenu(p
 
 PreviewWindow::~PreviewWindow()
 {
+    if (m_hwnd.has_value())
+    {
+        CloseWindow(m_hwnd.value());
+    }
     DeleteFile(m_tempPath.c_str());
 }
 
