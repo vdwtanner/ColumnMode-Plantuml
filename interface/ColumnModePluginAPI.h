@@ -13,11 +13,15 @@ namespace ColumnMode
 	typedef ATOM(APIENTRY* PFN_CB_REGISTERWINDOWCLASSEX)(_In_ WNDCLASSEX);
 	typedef HRESULT(APIENTRY* PFN_CB_OPENWINDOW)(_In_ CreateWindowArgs, _Inout_ HWND* pHwnd);
 
+	//Column Mode Settings
+	typedef HRESULT(APIENTRY* PFN_CB_RECOMMEND_EDIT_MODE)(HANDLE hPlugin, EDIT_MODE);
+
 	struct ColumnModeCallbacks
 	{
 		PFN_CB_REGISTERWINDOWCLASS pfnRegisterWindowClass;
 		PFN_CB_REGISTERWINDOWCLASSEX pfnRegisterWindowClassEx;
 		PFN_CB_OPENWINDOW pfnOpenWindow;
+		PFN_CB_RECOMMEND_EDIT_MODE pfnRecommendEditMode;
 	};
 
 #pragma endregion
@@ -25,6 +29,7 @@ namespace ColumnMode
 #pragma region PluginFunctions
 
 	//File operations
+	typedef HRESULT(APIENTRY* PFN_PF_ONOPEN)(HANDLE, LPCWSTR);
 	typedef HRESULT(APIENTRY* PFN_PF_ONSAVE)(HANDLE, LPCWSTR);
 	typedef HRESULT(APIENTRY* PFN_PF_ONSAVEAS)(HANDLE, LPCWSTR);
 
@@ -34,6 +39,7 @@ namespace ColumnMode
 
 	struct PluginFunctions
 	{
+		PFN_PF_ONOPEN pfnOnOpen;
 		PFN_PF_ONSAVE pfnOnSave;
 		PFN_PF_ONSAVEAS pfnOnSaveAs;
 
